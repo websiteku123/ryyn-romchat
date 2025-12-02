@@ -2,70 +2,87 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Chat Emas Hijau</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Room Chat Dark Mode: Emas Hijau</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     
     <style>
-        /* Palet Warna: Hijau Emerald & Emas */
+        /* Variabel Warna: Dark Mode (Abu-abu Gelap) + Emas/Hijau */
         :root {
             --color-primary: #00897b; /* Hijau Emerald */
             --color-secondary: #FFD700; /* Emas */
-            --color-bg: #f5f5f5;
-            --color-chat-bg: #fff;
-            --color-sent-bg: #00897b;
-            --color-received-bg: #e0e0e0;
+            --color-bg-dark: #121212; /* Abu-abu Gelap untuk body */
+            --color-container-bg: #1e1e1e; /* Kontainer Chat & Auth */
+            --color-card-bg: #2d2d2d; /* Latar belakang input dan kartu */
+            --color-text-light: #f0f0f0;
+            --color-text-muted: #aaaaaa;
+            --color-sent-bg: #00897b; /* Hijau untuk pesan sendiri */
+            --color-received-bg: #333333; /* Abu-abu gelap untuk pesan user lain */
+            --color-admin-bg: #4b4b00; /* Latar belakang tebal untuk pesan Admin */
+            --color-admin-accent: #ffeb3b; /* Emas terang untuk aksen Admin */
         }
 
+        /* Penyesuaian Body untuk tampilan seperti mobile/WhatsApp */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: var(--color-bg);
+            background-color: var(--color-bg-dark);
+            color: var(--color-text-light);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            /* Tambahkan padding bottom untuk mengantisipasi keyboard/gesture bar pada mobile */
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        
+        /* Container Utama */
+        #auth-container, #chat-container, #block-alert-container {
+            background-color: var(--color-container-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
         }
 
-        /* Tampilan Login/Daftar */
+        /* --- Tampilan Login/Daftar (Auth) --- */
         #auth-container {
             padding: 30px;
-            background-color: var(--color-chat-bg);
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             max-width: 400px;
             width: 90%;
             text-align: center;
         }
-
+        /* ... (Style Login lainnya tetap) ... */
         #auth-container h2 {
-            color: var(--color-primary);
-            margin-bottom: 20px;
+            color: var(--color-secondary);
+            margin-bottom: 25px;
+            font-size: 1.8em;
         }
 
         #auth-container input, #auth-container button {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
             box-sizing: border-box;
+            background-color: var(--color-card-bg);
+            color: var(--color-text-light);
+            font-size: 1em;
         }
 
         #auth-container button {
             background-color: var(--color-primary);
-            color: white;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
         }
 
         #auth-container button:hover {
-            background-color: #00695c;
+            background-color: #00a693;
+            transform: translateY(-1px);
         }
         
         #auth-container .switch-link {
@@ -74,86 +91,172 @@
             text-decoration: underline;
             margin-top: 10px;
             display: block;
+            font-size: 0.9em;
+        }
+        
+        /* --- Tampilan Peringatan Blokir --- */
+        #block-alert-container {
+            display: none; /* Default hidden */
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            border: 2px solid #cc0000;
+        }
+        
+        #block-alert-container i {
+            font-size: 3em;
+            color: #cc0000;
+            margin-bottom: 20px;
+        }
+        
+        #block-alert-container h2 {
+            color: #ff5555;
+            margin-bottom: 10px;
+        }
+        
+        #block-alert-container p {
+            color: var(--color-text-muted);
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+        
+        #block-alert-container button {
+            background-color: #cc0000;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        #block-alert-container button:hover {
+            background-color: #990000;
         }
 
-        /* Tampilan Chat Room */
+
+        /* --- Tampilan Chat Room --- */
         #chat-container {
-            display: none; /* Sembunyikan saat awal */
-            width: 450px;
-            height: 90vh;
-            max-height: 800px;
-            background-color: var(--color-chat-bg);
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            display: flex;
+            display: none; 
+            width: 100vw; /* Lebar penuh layar */
+            max-width: 500px; /* Batasi lebar seperti tampilan HP/WhatsApp */
+            height: 100vh; /* Tinggi penuh layar */
+            max-height: 900px;
             flex-direction: column;
+            border-radius: 0; /* Hapus radius agar terlihat seperti aplikasi full screen */
         }
 
         /* Header Chat */
         .chat-header {
             background-color: var(--color-primary);
             color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 1.2em;
+            padding: 15px 20px;
+            font-size: 1.3em;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-radius: 0; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
         
         .chat-header i {
-            color: var(--color-secondary); /* Icon emas */
+            color: var(--color-secondary);
+            margin-right: 8px;
         }
         
+        /* Watermark Admin */
+        .admin-tag {
+            background-color: var(--color-secondary);
+            color: #121212;
+            font-size: 0.6em;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 5px;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
         .chat-header button {
-            background: none;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
             color: white;
             cursor: pointer;
             font-size: 0.9em;
-            padding: 5px 10px;
-            border: 1px solid white;
-            border-radius: 5px;
+            padding: 8px 12px;
+            border-radius: 20px;
             transition: background-color 0.3s;
         }
 
         .chat-header button:hover {
-            background-color: #00a693;
+            background-color: #00695c;
         }
-
 
         /* Area Pesan */
         #messages {
             flex-grow: 1;
-            padding: 10px;
+            padding: 15px;
             overflow-y: auto;
-            background-color: var(--color-bg);
+            background-color: var(--color-container-bg);
+            /* Scrollbar styling for a darker theme */
+            scrollbar-color: #444 #1e1e1e;
+            scrollbar-width: thin;
         }
+        
+        #messages::-webkit-scrollbar { width: 8px; }
+        #messages::-webkit-scrollbar-track { background: var(--color-container-bg); }
+        #messages::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        #messages::-webkit-scrollbar-thumb:hover { background: #777; }
+
 
         /* Style Pesan */
         .message-bubble {
             display: flex;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            position: relative; 
+            transition: opacity 0.3s;
         }
-
+        
         .message-content {
-            padding: 8px 12px;
-            border-radius: 15px;
-            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            max-width: 80%;
             word-wrap: break-word;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
             position: relative;
-            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+            cursor: pointer; /* Menandakan bisa diklik/tap untuk reply */
         }
         
         .message-meta {
-            font-size: 0.7em;
-            opacity: 0.8;
-            margin-top: 2px;
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-top: 4px;
             text-align: right;
+            white-space: nowrap;
         }
         
-        /* Pesan dari Anda (Sent) */
+        .message-sender {
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 2px;
+            color: var(--color-secondary); /* Emas untuk nama user lain */
+        }
+        
+        /* Admin Message Styling (Tambahan) */
+        .is-admin .message-content {
+            background-color: var(--color-admin-bg) !important; 
+            border: 1px solid var(--color-admin-accent);
+            color: var(--color-text-light);
+            font-weight: 500;
+        }
+        
+        .is-admin .message-sender {
+            color: var(--color-admin-accent) !important;
+        }
+        
+        /* Pesan Anda (Sent) */
         .sent {
             justify-content: flex-end;
         }
@@ -161,81 +264,256 @@
         .sent .message-content {
             background-color: var(--color-sent-bg);
             color: white;
-            border-bottom-right-radius: 5px;
+            border-bottom-right-radius: 4px;
         }
         
         .sent .message-meta {
-            color: #ccc;
+            color: #ddd;
         }
 
-        /* Pesan dari Orang Lain (Received) */
+        /* Pesan User Lain (Received) */
         .received {
             justify-content: flex-start;
         }
 
         .received .message-content {
             background-color: var(--color-received-bg);
-            color: #333;
-            border-bottom-left-radius: 5px;
-        }
-
-        .message-sender {
-            font-weight: bold;
-            font-size: 0.8em;
-            margin-bottom: 4px;
-            color: var(--color-primary);
+            color: var(--color-text-light);
+            border-bottom-left-radius: 4px;
         }
         
-        .received .message-sender {
-            color: #333;
+        /* Reply Bubble Style */
+        .reply-to-content {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 3px solid var(--color-secondary);
+            padding: 5px 8px;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            font-size: 0.8em;
+            color: var(--color-text-muted);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
-
-
+        .reply-to-user {
+            font-weight: bold;
+            color: var(--color-secondary);
+        }
+        
+        /* Reaction Button & Menu (Tetap) */
+        .reaction-menu {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--color-card-bg);
+            padding: 5px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            display: none;
+            white-space: nowrap; /* Agar tidak pecah */
+        }
+        .reaction-menu button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 3px;
+        }
+        
+        /* Displayed Reactions */
+        .reactions-list {
+            position: absolute;
+            bottom: -10px;
+            right: 0;
+            background: var(--color-card-bg);
+            border-radius: 10px;
+            padding: 2px 5px;
+            font-size: 0.7em;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+        
+        /* Delete Button (Hanya tampil pada pesan sendiri atau admin) */
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 5px;
+            opacity: 0.8;
+            transition: color 0.2s;
+        }
+        
+        .delete-btn:hover {
+            color: red;
+        }
+        
         /* Input Pesan */
         .chat-input-area {
             display: flex;
-            padding: 10px;
-            background-color: var(--color-chat-bg);
-            border-top: 1px solid #eee;
+            padding: 12px;
+            background-color: var(--color-container-bg);
+            border-top: 1px solid #333;
+            align-items: flex-end; /* Untuk menyesuaikan dengan input yang panjang */
+            border-radius: 0; 
+            /* Penyesuaian untuk keyboard/gesture bar */
+            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
         }
 
         #message-input {
             flex-grow: 1;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
             border-radius: 20px;
             margin-right: 10px;
             font-size: 1em;
+            background-color: var(--color-card-bg);
+            color: var(--color-text-light);
+            /* Buat input bisa multi-line agar responsif terhadap keyboard */
+            resize: none; 
+            max-height: 100px;
+            box-sizing: border-box;
         }
 
+        /* Ikon Lampiran dihapus sesuai permintaan */
+        
         #send-button {
             background-color: var(--color-primary);
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 10px;
             border-radius: 50%;
             cursor: pointer;
             font-size: 1.2em;
-            transition: background-color 0.3s;
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
+            min-width: 45px;
+            min-height: 45px;
             display: flex;
             justify-content: center;
             align-items: center;
+            transition: background-color 0.3s;
         }
 
         #send-button:hover {
             background-color: #00695c;
         }
         
-        /* Icon Tambahan untuk fitur lanjutan */
-        .attachment-icon {
-            margin-right: 10px;
-            font-size: 1.4em;
-            color: var(--color-primary);
-            cursor: pointer;
-            align-self: center;
+        /* Reply Input Overlay */
+        #reply-status {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid var(--color-secondary);
+            padding: 8px 15px;
+            display: none; 
+            font-size: 0.9em;
+            color: var(--color-text-light);
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #333;
         }
+        
+        #reply-status-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 85%;
+        }
+        
+        #clear-reply {
+            background: none;
+            border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            font-size: 1.2em;
+        }
+        #clear-reply:hover {
+            color: var(--color-secondary);
+        }
+        
+        /* Admin Panel - User List */
+        #admin-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--color-container-bg);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .admin-panel-header {
+            background-color: #3f51b5; /* Warna biru untuk header admin */
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #user-list {
+            list-style: none;
+            padding: 10px;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 10px;
+            border-bottom: 1px solid #333;
+            color: var(--color-text-light);
+        }
+        
+        .user-item span {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        .user-actions button {
+            background: none;
+            border: 1px solid var(--color-primary);
+            color: var(--color-primary);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background-color 0.2s, color 0.2s;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .user-actions button.unblock-btn {
+            border-color: #f44336;
+            color: #f44336;
+        }
+
+        .user-actions button:hover {
+            background-color: var(--color-primary);
+            color: var(--color-text-light);
+        }
+        
+        .user-actions button.unblock-btn:hover {
+            background-color: #f44336;
+            color: var(--color-text-light);
+        }
+        
+        .user-status {
+            font-size: 0.8em;
+            color: #f44336;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
     </style>
 </head>
 <body>
@@ -251,64 +529,106 @@
         <button id="auth-button" onclick="handleAuth()">Login</button>
         
         <a class="switch-link" onclick="toggleAuthMode()">Belum punya akun? Daftar</a>
-        <p id="auth-error" style="color: red; margin-top: 10px;"></p>
+        <p id="auth-error" style="color: #ff5555; margin-top: 15px;"></p>
+    </div>
+    
+    <div id="block-alert-container">
+        <i class="fas fa-user-lock"></i>
+        <h2>AKUN DIBLOKIR</h2>
+        <p>Akses Anda ke ruang obrolan ini telah diblokir oleh Admin. Jika ini adalah kesalahan, harap hubungi pengelola.</p>
+        <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
     </div>
 
     <div id="chat-container">
         <div class="chat-header">
-            <span><i class="fas fa-comments"></i> Room Chat Emas Hijau</span>
-            <span id="current-username"></span>
-            <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            <span><i class="fas fa-comments"></i> Room Chat</span>
+            <div style="display:flex; align-items:center;">
+                <button id="admin-button" onclick="toggleAdminPanel()" style="display:none; margin-right: 10px;"><i class="fas fa-user-shield"></i> Admin Panel</button>
+                <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
         </div>
 
         <div id="messages">
-            </div>
+        </div>
+
+        <div id="reply-status">
+            <span id="reply-status-text">Membalas: <span id="reply-target-user" style="font-weight:bold;"></span>: "<span id="reply-target-text"></span>"</span>
+            <button id="clear-reply" onclick="clearReply()"><i class="fas fa-times"></i></button>
+        </div>
 
         <div class="chat-input-area">
-            <i class="fas fa-paperclip attachment-icon" onclick="alert('Fitur kirim gambar memerlukan Firebase Storage dan fungsi upload yang lebih kompleks.')"></i>
             
-            <input type="text" id="message-input" placeholder="Ketik pesan..." onkeypress="if(event.keyCode==13) sendMessage()">
+            <textarea type="text" id="message-input" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }" oninput="autoResizeTextarea(this)"></textarea>
             <button id="send-button" onclick="sendMessage()">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
     </div>
+    
+    <div id="admin-panel">
+        <div class="admin-panel-header">
+            <span><i class="fas fa-users-cog"></i> Panel Administrasi</span>
+            <button onclick="toggleAdminPanel()" style="background: none; border: 1px solid white;"><i class="fas fa-times"></i> Tutup</button>
+        </div>
+        <ul id="user-list">
+            <li>Memuat pengguna...</li>
+        </ul>
+    </div>
+
 
     <script>
-        // GANTI DENGAN KONFIGURASI FIREBASE ANDA SENDIRIconst firebaseConfig = {
-  
-const firebaseConfig = {
-  apiKey: "AIzaSyBaskhaOeRoNdv6SPYyds7e0WOdwu_as1Y",
-  authDomain: "vanznumeroo.firebaseapp.com",
-  databaseURL: "https://vanznumeroo-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "vanznumeroo",
-  storageBucket: "vanznumeroo.firebasestorage.app",
-  messagingSenderId: "960620847893",
-  appId: "1:960620847893:web:6627789af79018d6dbff1c",
-  measurementId: "G-Y34WQDB96X"
-};
+        // GANTI DENGAN KONFIGURASI FIREBASE ANDA SENDIRI!
+        const firebaseConfig = {
+          apiKey: "AIzaSyBaskhaOeRoNdv6SPYyds7e0WOdwu_as1Y",
+          authDomain: "vanznumeroo.firebaseapp.com",
+          databaseURL: "https://vanznumeroo-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "vanznumeroo",
+          storageBucket: "vanznumeroo.firebasestorage.app",
+          messagingSenderId: "960620847893",
+          appId: "1:960620847893:web:6627789af79018d6dbff1c",
+          measurementId: "G-Y34WQDB96X"
+        };
 
         // Inisialisasi Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // Admin email check
+        const ADMIN_EMAIL = 'bangjago17@gmail.com';
+        let isAdmin = false;
+        
         // Elemen DOM
         const authContainer = document.getElementById('auth-container');
         const chatContainer = document.getElementById('chat-container');
+        const blockAlertContainer = document.getElementById('block-alert-container');
         const usernameInput = document.getElementById('username-input');
         const authButton = document.getElementById('auth-button');
         const authError = document.getElementById('auth-error');
         const messagesEl = document.getElementById('messages');
         const messageInput = document.getElementById('message-input');
-        const currentUsernameEl = document.getElementById('current-username');
+        const adminButton = document.getElementById('admin-button');
+        const adminPanel = document.getElementById('admin-panel');
+        const userList = document.getElementById('user-list');
+        const replyStatusEl = document.getElementById('reply-status');
+        const replyTargetUserEl = document.getElementById('reply-target-user');
+        const replyTargetTextEl = document.getElementById('reply-target-text');
 
         let isRegisterMode = false;
         let currentUser;
+        let replyToMessage = null; // Objek untuk menyimpan data pesan yang dibalas
+        
+        let messagesListener = null; // Untuk menyimpan listener pesan
+        let usersListener = null; // Untuk menyimpan listener pengguna
 
-        // --- 1. FUNGSI OTENTIKASI (LOGIN/DAFTAR) ---
+        // --- FUNGSI UTILITY ---
+        function autoResizeTextarea(element) {
+            element.style.height = 'auto';
+            element.style.height = element.scrollHeight + 'px';
+        }
+        
+        // --- FUNGSI OTENTIKASI & BLOKIR ---
 
-        /** Mengganti mode dari Login ke Daftar dan sebaliknya */
         function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
             usernameInput.style.display = isRegisterMode ? 'block' : 'none';
@@ -319,7 +639,6 @@ const firebaseConfig = {
             authError.innerText = '';
         }
 
-        /** Menangani proses login atau daftar */
         async function handleAuth() {
             const email = document.getElementById('email-input').value;
             const password = document.getElementById('password-input').value;
@@ -332,135 +651,482 @@ const firebaseConfig = {
             }
 
             try {
+                let userCredential;
                 if (isRegisterMode) {
-                    // Proses Daftar (Register)
-                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                    // Menyimpan nama pengguna ke Firestore saat Daftar
+                    userCredential = await auth.createUserWithEmailAndPassword(email, password);
                     await db.collection('users').doc(userCredential.user.uid).set({
                         username: username,
+                        email: email,
+                        isBlocked: false,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     await userCredential.user.updateProfile({ displayName: username });
-                    alert('Pendaftaran berhasil! Anda sekarang masuk.');
                 } else {
-                    // Proses Login
-                    await auth.signInWithEmailAndPassword(email, password);
+                    userCredential = await auth.signInWithEmailAndPassword(email, password);
                 }
+                
+                // Cek status blokir setelah login/daftar
+                const userDoc = await db.collection('users').doc(userCredential.user.uid).get();
+                if (userDoc.exists && userDoc.data().isBlocked) {
+                    // Jika diblokir, logout dan tampilkan peringatan
+                    await auth.signOut();
+                    showBlockedAlert();
+                    return;
+                }
+                
             } catch (error) {
                 console.error("Kesalahan Otentikasi:", error.code, error.message);
                 authError.innerText = `Kesalahan: ${error.message}`;
             }
         }
         
-        /** Logout dari Firebase */
         function logout() {
-            auth.signOut().then(() => {
-                console.log("User berhasil logout.");
-            }).catch((error) => {
-                console.error("Kesalahan saat logout:", error);
-            });
+            auth.signOut();
+            hideBlockedAlert();
+        }
+        
+        function showBlockedAlert() {
+            authContainer.style.display = 'none';
+            chatContainer.style.display = 'none';
+            adminPanel.style.display = 'none';
+            blockAlertContainer.style.display = 'flex';
+            document.body.style.alignItems = 'center';
+            document.body.style.justifyContent = 'center';
+            if (messagesListener) messagesListener();
+            if (usersListener) usersListener();
+        }
+        
+        function hideBlockedAlert() {
+            blockAlertContainer.style.display = 'none';
         }
 
 
-        // --- 2. FUNGSI CHAT ROOM (KIRIM/TERIMA PESAN) ---
+        // --- FUNGSI CHAT ROOM & FITUR BARU ---
 
-        /** Mengirim pesan ke Firestore */
+        function setReply(messageId, username, text, uid) {
+            replyToMessage = {
+                id: messageId,
+                username: username,
+                text: text.length > 50 ? text.substring(0, 50) + '...' : text,
+                uid: uid
+            };
+            replyTargetUserEl.innerText = username;
+            replyTargetTextEl.innerText = replyToMessage.text;
+            replyStatusEl.style.display = 'flex';
+            messageInput.focus();
+            autoResizeTextarea(messageInput);
+        }
+
+        function clearReply() {
+            replyToMessage = null;
+            replyStatusEl.style.display = 'none';
+            messageInput.style.height = 'auto';
+        }
+        
         function sendMessage() {
             const text = messageInput.value.trim();
             if (text === '' || !currentUser) return;
 
-            db.collection('messages').add({
+            const messageData = {
                 uid: currentUser.uid,
-                username: currentUser.displayName || 'Anonim', // Menggunakan displayName
+                username: currentUser.displayName || 'Anonim',
                 text: text,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            })
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                reactions: {},
+                isAdmin: isAdmin,
+                deleted: false // Flag untuk permanent delete
+            };
+
+            if (replyToMessage) {
+                messageData.replyToId = replyToMessage.id;
+                messageData.replyToUser = replyToMessage.username;
+                messageData.replyToText = replyToMessage.text;
+                messageData.replyToUid = replyToMessage.uid; // Simpan UID pesan yang dibalas
+                clearReply(); 
+            }
+
+            db.collection('messages').add(messageData)
             .then(() => {
-                messageInput.value = ''; // Kosongkan input
-                // Fitur: Reply dan Reaction memerlukan update struktur data di sini
+                messageInput.value = '';
+                messageInput.style.height = 'auto'; // Reset ukuran textarea
             })
             .catch(error => {
                 console.error("Kesalahan saat mengirim pesan:", error);
             });
         }
+        
+        // Hapus Permanen (Hanya Admin)
+        function permanentDeleteMessage(messageId) {
+            if (!isAdmin || !confirm("PERINGATAN ADMIN: Anda yakin ingin menghapus pesan ini secara PERMANEN untuk SEMUA orang?")) return;
+            
+            db.collection('messages').doc(messageId).update({ deleted: true, text: '[Pesan telah dihapus oleh Admin]' })
+                .then(() => {
+                    console.log("Pesan berhasil dihapus permanen.");
+                })
+                .catch(error => {
+                    console.error("Kesalahan menghapus pesan permanen:", error);
+                });
+        }
+        
+        // Hapus Pribadi (Hanya Pengirim)
+        function deleteMessage(messageId) {
+            if (!currentUser || !confirm("Anda yakin ingin menghapus pesan ini untuk Anda?")) return;
+            
+            // Note: Dalam implementasi Firestore real-time yang sebenarnya, menghapus dokumen hanya boleh dilakukan oleh Admin atau pemilik.
+            // Untuk non-admin, jika ingin 'menghilangkan' pesan, umumnya di-implementasikan di sisi klien atau menggunakan field 'deletedForUser'
+            // Di sini, kita akan membiarkan Firestore Security Rules yang mengatur. Jika Anda admin, panggil permanentDeleteMessage.
+            // Karena ini untuk self-delete, kita asumsikan security rules mengizinkan pemilik menghapus dokumennya.
+            // Jika Anda ingin mengimplementasikan self-delete yang tidak menghapus dokumen (hanya di UI), logikanya akan berbeda.
+            
+            // Panggil permanentDelete jika admin, atau hapus dokumen jika pemilik.
+            if(isAdmin) {
+                permanentDeleteMessage(messageId);
+            } else {
+                db.collection('messages').doc(messageId).delete()
+                    .then(() => {
+                        console.log("Pesan berhasil dihapus (dokumen dihapus/pribadi).");
+                    })
+                    .catch(error => {
+                        console.error("Kesalahan menghapus pesan:", error);
+                    });
+            }
+        }
+        
+        function toggleReaction(messageId, emoji) {
+            const messageRef = db.collection('messages').doc(messageId);
+            const userId = currentUser.uid;
+            
+            db.runTransaction(async transaction => {
+                const doc = await transaction.get(messageRef);
+                if (!doc.exists) {
+                    throw "Pesan tidak ditemukan!";
+                }
+                
+                const currentReactions = doc.data().reactions || {};
+                let newReactions = { ...currentReactions };
 
-        /** Menambahkan pesan ke tampilan UI */
+                let removed = false;
+                
+                // Cek apakah user sudah memberikan reaksi ini
+                if (newReactions[emoji] && newReactions[emoji].includes(userId)) {
+                    // Hapus reaksi (toggle off)
+                    newReactions[emoji] = newReactions[emoji].filter(uid => uid !== userId);
+                    if (newReactions[emoji].length === 0) {
+                        delete newReactions[emoji];
+                    }
+                    removed = true;
+                } else {
+                    // Hapus reaksi lama user (jika ada) dan tambahkan reaksi baru
+                    for (const key in newReactions) {
+                        newReactions[key] = newReactions[key].filter(uid => uid !== userId);
+                        if (newReactions[key].length === 0) {
+                            delete newReactions[key];
+                        }
+                    }
+                    
+                    if (!removed) {
+                        newReactions[emoji] = newReactions[emoji] || [];
+                        newReactions[emoji].push(userId);
+                    }
+                }
+                
+                transaction.update(messageRef, { reactions: newReactions });
+            }).catch(error => {
+                console.error("Kesalahan toggle reaction:", error);
+            });
+        }
+        
+        function showReactionMenu(messageId, element) {
+            // Sembunyikan semua menu reaksi yang mungkin terbuka
+            document.querySelectorAll('.reaction-menu').forEach(menu => menu.style.display = 'none');
+            
+            const menu = document.querySelector(`.message-bubble[data-id="${messageId}"] .reaction-menu`);
+            if (menu) {
+                menu.style.display = 'flex';
+                // Sembunyikan setelah beberapa detik
+                setTimeout(() => {
+                    menu.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+
         function displayMessage(doc) {
             const data = doc.data();
             const messageId = doc.id;
-            const isSent = data.uid === currentUser.uid;
             
-            // Format waktu (sederhana)
-            let timeStr = 'Baru saja';
+            // Skip pesan yang dihapus permanen dan pesan yang telah dihapus (kecuali admin)
+            if (data.deleted && !isAdmin) {
+                const elementToRemove = document.querySelector(`.message-bubble[data-id="${messageId}"]`);
+                if (elementToRemove) elementToRemove.remove();
+                return;
+            }
+            
+            const isSent = data.uid === currentUser.uid;
+            const isMessageAdmin = data.isAdmin || (data.uid === 'admin_uid_placeholder' && !isSent); // Asumsi admin message memiliki flag/atau uid tetap
+            
+            // Format waktu
+            let timeStr = '';
             if (data.timestamp) {
                 const date = data.timestamp.toDate();
                 timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             }
 
-            const bubbleClass = isSent ? 'sent' : 'received';
             const senderName = isSent ? 'Anda' : (data.username || 'Anonim');
+            const bubbleClass = isSent ? 'sent' : 'received';
+            const adminClass = isMessageAdmin ? 'is-admin' : '';
+            
+            // Render Reply
+            let replyHtml = '';
+            if (data.replyToId && data.replyToUser && data.replyToText) {
+                replyHtml = `
+                    <div class="reply-to-content" onclick="scrollToMessage('${data.replyToId}')">
+                        <div class="reply-to-user">${data.replyToUser}</div>
+                        <div>${data.replyToText}</div>
+                    </div>
+                `;
+            }
+            
+            // Render Reactions
+            const reactions = data.reactions || {};
+            let reactionsHtml = '';
+            for (const emoji in reactions) {
+                const count = reactions[emoji].length;
+                if (count > 0) {
+                     reactionsHtml += `<span title="${reactions[emoji].map(uid => uid === currentUser.uid ? 'Anda' : 'Pengguna Lain').join(', ')}">${emoji} ${count}</span>`;
+                }
+            }
+            if (reactionsHtml) {
+                reactionsHtml = `<div class="reactions-list">${reactionsHtml}</div>`;
+            }
+
+            // Render Delete Button: Admin bisa menghapus semua. Pengirim bisa menghapus pesan sendiri.
+            let deleteButtonHtml = '';
+            if (isAdmin) {
+                deleteButtonHtml = `<button class="delete-btn" onclick="permanentDeleteMessage('${messageId}')" title="Hapus Permanen (Admin)"><i class="fas fa-trash-alt"></i></button>`;
+            } else if (isSent) {
+                deleteButtonHtml = `<button class="delete-btn" onclick="deleteMessage('${messageId}')" title="Hapus pesan untuk Anda"><i class="fas fa-trash"></i></button>`;
+            }
+                
+            // Daftar Emoji untuk Reaction Menu
+            const emojis = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+            const reactionMenuHtml = `
+                <div class="reaction-menu">
+                    ${emojis.map(e => `<button onclick="toggleReaction('${messageId}', '${e}')">${e}</button>`).join('')}
+                </div>
+            `;
             
             const messageHtml = `
-                <div class="message-bubble ${bubbleClass}" data-id="${messageId}">
+                <div class="message-bubble ${bubbleClass} ${adminClass}" data-id="${messageId}" 
+                     ondblclick="setReply('${messageId}', '${senderName}', \`${data.text}\`, '${data.uid}')"
+                     onclick="showReactionMenu('${messageId}', this)">
+                     
+                    ${reactionMenuHtml}
                     <div class="message-content">
-                        ${!isSent ? `<div class="message-sender">${senderName}</div>` : ''}
+                        ${replyHtml}
+                        ${!isSent ? `<div class="message-sender">${senderName} ${isMessageAdmin ? '<span class="admin-tag">ADMIN</span>' : ''}</div>` : ''}
                         <div class="message-text">${data.text}</div>
-                        <div class="message-meta">${timeStr} <i class="fas fa-check"></i></div> 
+                        <div class="message-meta">${timeStr} <i class="fas fa-check"></i> ${deleteButtonHtml}</div>
+                        ${reactionsHtml}
                     </div>
                 </div>
             `;
             
-            messagesEl.insertAdjacentHTML('beforeend', messageHtml);
-            // Gulir ke bawah pesan terbaru
-            messagesEl.scrollTop = messagesEl.scrollHeight;
+            const existingEl = document.querySelector(`.message-bubble[data-id="${messageId}"]`);
+            if (existingEl) {
+                // Perbarui pesan yang sudah ada
+                existingEl.outerHTML = messageHtml;
+            } else {
+                // Tambahkan pesan baru
+                messagesEl.insertAdjacentHTML('beforeend', messageHtml);
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
         }
         
-        /** Mengambil semua pesan dari Firestore (real-time listener) */
+        function scrollToMessage(messageId) {
+            const target = document.querySelector(`.message-bubble[data-id="${messageId}"]`);
+            if (target) {
+                messagesEl.scrollTop = target.offsetTop - messagesEl.offsetTop - (messagesEl.clientHeight / 3);
+                // Highlight sebentar
+                target.style.backgroundColor = 'rgba(255, 215, 0, 0.2)';
+                setTimeout(() => {
+                    target.style.backgroundColor = 'transparent';
+                }, 1000);
+            }
+        }
+
         function listenForMessages() {
-            // Urutkan berdasarkan timestamp, limit 50 pesan terakhir
-            db.collection('messages').orderBy('timestamp', 'asc').limit(50)
+            if (messagesListener) {
+                messagesListener(); // Unsubscribe listener lama
+            }
+
+            messagesListener = db.collection('messages').orderBy('timestamp', 'asc')
                 .onSnapshot(snapshot => {
-                    // Hapus pesan lama dan muat ulang semua pesan (sederhana)
-                    messagesEl.innerHTML = ''; 
-                    snapshot.forEach(doc => {
-                        displayMessage(doc);
+                    let changes = snapshot.docChanges();
+
+                    changes.forEach(change => {
+                        if (change.type === "added" || change.type === "modified") {
+                            // Cek apakah pesan yang dimodifikasi adalah pesan yang sedang dibalas
+                             if (replyToMessage && replyToMessage.id === change.doc.id) {
+                                setReply(
+                                    change.doc.id, 
+                                    change.doc.data().username || 'Anonim', 
+                                    change.doc.data().text,
+                                    change.doc.data().uid
+                                );
+                            }
+                            displayMessage(change.doc);
+                        }
+                        if (change.type === "removed") {
+                            const element = document.querySelector(`.message-bubble[data-id="${change.doc.id}"]`);
+                            if (element) {
+                                element.remove();
+                            }
+                        }
                     });
+
+                    // Gulir ke bawah jika ada pesan baru/modifikasi
+                    if (changes.length > 0 && messagesEl.scrollHeight - messagesEl.scrollTop < messagesEl.clientHeight + 100) {
+                        messagesEl.scrollTop = messagesEl.scrollHeight;
+                    }
                 }, error => {
                     console.error("Kesalahan mendengarkan pesan:", error);
                 });
         }
+        
+        // --- FUNGSI ADMIN PANEL ---
 
-        // --- 3. PENGELOLA STATUS OTENTIKASI ---
+        function toggleAdminPanel() {
+            if (!isAdmin) return;
+            
+            if (adminPanel.style.display === 'flex') {
+                adminPanel.style.display = 'none';
+                if (usersListener) {
+                    usersListener(); // Stop listening
+                    usersListener = null;
+                }
+            } else {
+                adminPanel.style.display = 'flex';
+                listenForUsers();
+            }
+        }
+        
+        function listenForUsers() {
+            if (usersListener) usersListener();
 
-        /** Listener yang dipanggil ketika status Auth berubah (Login/Logout) */
-        auth.onAuthStateChanged(user => {
+            usersListener = db.collection('users').onSnapshot(snapshot => {
+                userList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const userId = doc.id;
+                    if (data.email === ADMIN_EMAIL) return; // Jangan tampilkan Admin di daftar
+
+                    const isBlocked = data.isBlocked || false;
+                    const buttonText = isBlocked ? 
+                        `<i class="fas fa-lock-open"></i> Batal Blokir` : 
+                        `<i class="fas fa-lock"></i> Blokir`;
+                    const buttonClass = isBlocked ? 'unblock-btn' : 'block-btn';
+                    const buttonAction = isBlocked ? 'unblockUser' : 'blockUser';
+                    const statusText = isBlocked ? `<span class="user-status">(BLOKIR)</span>` : '';
+
+                    userList.innerHTML += `
+                        <li class="user-item">
+                            <span>${data.username} (${data.email}) ${statusText}</span>
+                            <div class="user-actions">
+                                <button class="${buttonClass}" onclick="${buttonAction}('${userId}', ${isBlocked})">
+                                    ${buttonText}
+                                </button>
+                            </div>
+                        </li>
+                    `;
+                });
+            }, error => {
+                console.error("Kesalahan mendengarkan pengguna:", error);
+            });
+        }
+        
+        async function blockUser(uid, isBlocked) {
+            if (!isAdmin) return;
+            const action = isBlocked ? "Batal Blokir" : "Blokir";
+            if (!confirm(`Anda yakin ingin ${action} pengguna ini?`)) return;
+
+            try {
+                await db.collection('users').doc(uid).update({ isBlocked: !isBlocked });
+                alert(`Pengguna berhasil di ${action.toLowerCase()}.`);
+            } catch (error) {
+                console.error(`Kesalahan ${action.toLowerCase()} pengguna:`, error);
+                alert(`Gagal ${action.toLowerCase()} pengguna.`);
+            }
+        }
+        
+        async function unblockUser(uid, isBlocked) {
+            // Re-use logic for unblock, just for clarity in button name
+            blockUser(uid, isBlocked);
+        }
+        
+        window.blockUser = blockUser; // Expose to global scope
+        window.unblockUser = unblockUser; // Expose to global scope
+        window.deleteMessage = deleteMessage; // Expose to global scope
+        window.permanentDeleteMessage = permanentDeleteMessage; // Expose to global scope
+        window.toggleReaction = toggleReaction; // Expose to global scope
+        window.setReply = setReply; // Expose to global scope
+        window.clearReply = clearReply; // Expose to global scope
+        window.scrollToMessage = scrollToMessage; // Expose to global scope
+        window.toggleAdminPanel = toggleAdminPanel; // Expose to global scope
+
+
+        // --- PENGELOLA STATUS OTENTIKASI ---
+
+        auth.onAuthStateChanged(async user => {
             if (user) {
-                // User sudah login
                 currentUser = user;
+                isAdmin = user.email === ADMIN_EMAIL;
                 
-                // Gunakan nama tampilan dari otentikasi
-                const displayName = user.displayName || 'Pengguna';
-                currentUsernameEl.innerText = `Masuk sebagai: ${displayName}`;
+                // Cek status blokir dari Firestore
+                try {
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists && userDoc.data().isBlocked) {
+                        // Jika diblokir, tampilkan peringatan dan keluar
+                        showBlockedAlert();
+                        return;
+                    }
+                } catch (error) {
+                    console.error("Gagal memeriksa status blokir:", error);
+                }
 
-                // Tampilkan Chat, Sembunyikan Auth
+                hideBlockedAlert();
                 authContainer.style.display = 'none';
                 chatContainer.style.display = 'flex';
                 
-                listenForMessages(); // Mulai mendengarkan pesan
-                
-                console.log("User Logged In:", displayName);
+                // Tampilkan tombol Admin jika Admin
+                adminButton.style.display = isAdmin ? 'inline-block' : 'none';
+
+                listenForMessages(); 
+                console.log("User Logged In:", user.displayName, isAdmin ? '(ADMIN)' : '');
 
             } else {
-                // User logout
                 currentUser = null;
-
-                // Tampilkan Auth, Sembunyikan Chat
+                isAdmin = false;
                 chatContainer.style.display = 'none';
+                adminPanel.style.display = 'none';
                 authContainer.style.display = 'block';
+                document.getElementById('email-input').value = '';
+                document.getElementById('password-input').value = '';
                 
+                if (messagesListener) {
+                    messagesListener(); // Stop listening
+                }
+                if (usersListener) {
+                    usersListener(); // Stop listening
+                }
+                messagesEl.innerHTML = ''; 
                 console.log("User Logged Out.");
-                messagesEl.innerHTML = ''; // Hapus pesan lama
             }
+        });
+        
+        // Inisialisasi agar textarea tidak terlalu kecil
+        document.addEventListener('DOMContentLoaded', () => {
+            autoResizeTextarea(messageInput);
         });
 
     </script>
